@@ -95,7 +95,7 @@ namespace Jint.Runtime.Interop
                                                     @vars),
                                                 jsValueToObject), Expression.Empty());
 
-                        return Expression.Lambda(callExpresion, new ReadOnlyCollection<ParameterExpression>(@params));
+                        return Expression.Lambda(callExpresion, new ReadOnlyCollection<ParameterExpression>(@params)).Compile();
                     }
                     else if (genericType.Name.StartsWith("Func"))
                     {
@@ -133,7 +133,7 @@ namespace Jint.Runtime.Interop
                                                         ),                            
                                                     returnType);
 
-                        return Expression.Lambda(callExpresion, new ReadOnlyCollection<ParameterExpression>(@params));
+                        return Expression.Lambda(callExpresion, new ReadOnlyCollection<ParameterExpression>(@params)).Compile();
                     }
                 }
                 else

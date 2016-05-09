@@ -52,9 +52,31 @@ namespace Jint.Tests.Runtime
             RunTest(@"
                 assert(square(10) === 100);
             ");
-        }
+		}
 
-        [Fact]
+		[Fact]
+		public void ParameterConversionForActionWorks()
+		{
+			_engine.SetValue("action", new Action<Action<object>>((a) => { a?.Invoke(null); }));
+
+			RunTest(@"
+				action(function () { });
+				assert(true);
+            ");
+		}
+
+		[Fact]
+		public void ParameterConversionForFuncWorks()
+		{
+			_engine.SetValue("func", new Action<Func<object>>((a) => { a?.Invoke(); }));
+
+			RunTest(@"
+				func(function () { });
+				assert(true);
+            ");
+		}
+
+		[Fact]
         public void DelegateWithNullableParameterCanBePassedANull()
         {
             _engine.SetValue("isnull", new Func<double?, bool>(x => x == null));
