@@ -119,10 +119,10 @@ namespace Jint.Tests.CommonScripts
         [Theory]
         [InlineData("controlflow-recursive", "https://raw.githubusercontent.com/WebKit/webkit/master/PerformanceTests/SunSpider/tests/sunspider-1.0.2/controlflow-recursive.js")]
         public void ControlFlowRecursive(string name, string url)
-		{
-			var content = new WebClient().DownloadString(url);
-			var t = new Thread(() =>
+        {
+            var t = new Thread(() =>
             {
+                var content = new WebClient().DownloadString(url);
                 RunTest(content);    
             }, 1000000000);
             
