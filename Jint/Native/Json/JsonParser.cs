@@ -852,6 +852,10 @@ namespace Jint.Native.Json
                     _extra.Tokens = new List<Token>();
                 }
 
+				if(!options.StoreLocation)
+				{
+					_extra.Loc = null;
+				}
             }
 
             try
