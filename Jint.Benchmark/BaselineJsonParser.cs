@@ -6,15 +6,14 @@ using Jint.Native.Object;
 using Jint.Parser;
 using Jint.Parser.Ast;
 using Jint.Runtime;
-using System.Text;
 
 namespace Jint.Native.Json
 {
-    public class JsonParser
+    public class BaselineJsonParser
     {
         private readonly Engine _engine;
 
-        public JsonParser(Engine engine)
+        public BaselineJsonParser(Engine engine)
         {
             _engine = engine;
         }
@@ -29,9 +28,7 @@ namespace Jint.Native.Json
         private Token _lookahead;
         private string _source;
 
-		private readonly StringBuilder stringBuilder = new StringBuilder();
-
-		private State _state;
+        private State _state;
 
         private static bool IsDecimalDigit(char ch)
         {
@@ -159,67 +156,66 @@ namespace Jint.Native.Json
         }
 
         private Token ScanNumericLiteral()
-		{
-			stringBuilder.Clear();
-			char ch = _source.CharCodeAt(_index);
+        {
+            char ch = _source.CharCodeAt(_index);
 
             int start = _index;
+            string number = "";
             
             // Number start with a -
             if (ch == '-')
             {
-                stringBuilder.Append(_source.CharCodeAt(_index++));
+                number += _source.CharCodeAt(_index++).ToString();
                 ch = _source.CharCodeAt(_index);
             }
 
             if (ch != '.')
-			{
-				stringBuilder.Append(_source.CharCodeAt(_index++));
-				ch = _source.CharCodeAt(_index);
-
-				// Hex number starts with '0x'.
-				// Octal number starts with '0'.
-				if (stringBuilder.Length == 1 && stringBuilder[0] == '0')
-				{
-					// decimal number starts with '0' such as '09' is illegal.
-					if (ch > 0 && IsDecimalDigit(ch))
-					{
-						throw new Exception(Messages.UnexpectedToken);
-					}
-				}
-
-				while (IsDecimalDigit(_source.CharCodeAt(_index)))
-				{
-					stringBuilder.Append(_source.CharCodeAt(_index++));
-				}
-				
-				ch = _source.CharCodeAt(_index);
-			}
-
-			if (ch == '.')
             {
-				stringBuilder.Append(_source.CharCodeAt(_index++));
+                number += _source.CharCodeAt(_index++).ToString();
+                ch = _source.CharCodeAt(_index);
+
+                // Hex number starts with '0x'.
+                // Octal number starts with '0'.
+                if (number == "0")
+                {
+                    // decimal number starts with '0' such as '09' is illegal.
+                    if (ch > 0 && IsDecimalDigit(ch))
+                    {
+                        throw new Exception(Messages.UnexpectedToken);
+                    }
+                }
+
                 while (IsDecimalDigit(_source.CharCodeAt(_index)))
                 {
-					stringBuilder.Append(_source.CharCodeAt(_index++));
+                    number += _source.CharCodeAt(_index++).ToString();
+                }
+                ch = _source.CharCodeAt(_index);
+            }
+
+            if (ch == '.')
+            {
+                number += _source.CharCodeAt(_index++).ToString();
+                while (IsDecimalDigit(_source.CharCodeAt(_index)))
+                {
+                    number += _source.CharCodeAt(_index++).ToString();
                 }
                 ch = _source.CharCodeAt(_index);
             }
 
             if (ch == 'e' || ch == 'E')
             {
-				stringBuilder.Append(_source.CharCodeAt(_index++));
+                number += _source.CharCodeAt(_index++).ToString();
 
                 ch = _source.CharCodeAt(_index);
                 if (ch == '+' || ch == '-')
                 {
-					stringBuilder.Append(_source.CharCodeAt(_index++));
+                    number += _source.CharCodeAt(_index++).ToString();
                 }
                 if (IsDecimalDigit(_source.CharCodeAt(_index)))
                 {
                     while (IsDecimalDigit(_source.CharCodeAt(_index)))
                     {
-						stringBuilder.Append(_source.CharCodeAt(_index++));
+                        number += _source.CharCodeAt(_index++).ToString();
                     }
                 }
                 else
@@ -231,7 +227,7 @@ namespace Jint.Native.Json
             return new Token
                 {
                     Type = Tokens.Number,
-                    Value = Double.Parse(stringBuilder.ToString(), NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture),
+                    Value = Double.Parse(number, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent, CultureInfo.InvariantCulture),
                     LineNumber = _lineNumber,
                     LineStart = _lineStart,
                     Range = new[] {start, _index}
@@ -241,14 +237,12 @@ namespace Jint.Native.Json
         private Token ScanBooleanLiteral()
         {
             int start = _index;
-			stringBuilder.Clear();
+            string s = "";
             
             while (IsTrueOrFalseChar(_source.CharCodeAt(_index)))
             {
-                stringBuilder.Append(_source.CharCodeAt(_index++));
+                s += _source.CharCodeAt(_index++).ToString();
             }
-
-			string s = stringBuilder.ToString();
             
             if (s == "true" || s == "false")
             {
@@ -270,14 +264,12 @@ namespace Jint.Native.Json
         private Token ScanNullLiteral()
         {
             int start = _index;
-			stringBuilder.Clear();
-
+            string s = "";
+            
             while (IsNullChar(_source.CharCodeAt(_index)))
             {
-                stringBuilder.Append(_source.CharCodeAt(_index++));
+                s += _source.CharCodeAt(_index++).ToString();
             }
-
-			string s = stringBuilder.ToString();
 
             if (s == Null.Text)
             {
@@ -298,7 +290,8 @@ namespace Jint.Native.Json
 
         private Token ScanStringLiteral()
         {
-			stringBuilder.Clear();
+            string str = "";
+
             char quote = _source.CharCodeAt(_index);
 
             int start = _index;
@@ -328,13 +321,13 @@ namespace Jint.Native.Json
                         switch (ch)
                         {
                             case 'n':
-                                stringBuilder.Append('\n');
+                                str += '\n';
                                 break;
                             case 'r':
-								stringBuilder.Append('\r');
+                                str += '\r';
                                 break;
                             case 't':
-								stringBuilder.Append('\t');
+                                str += '\t';
                                 break;
                             case 'u':
                             case 'x':
@@ -342,22 +335,22 @@ namespace Jint.Native.Json
                                 char unescaped = ScanHexEscape(ch);
                                 if (unescaped > 0)
                                 {
-									stringBuilder.Append(unescaped);
+                                    str += unescaped.ToString();
                                 }
                                 else
                                 {
                                     _index = restore;
-									stringBuilder.Append(ch);
+                                    str += ch.ToString();
                                 }
                                 break;
                             case 'b':
-								stringBuilder.Append('\b');
+                                str += "\b";
                                 break;
                             case 'f':
-								stringBuilder.Append('\f');
+                                str += "\f";
                                 break;
                             case 'v':
-								stringBuilder.Append('\x0B');
+                                str += "\x0B";
                                 break;
 
                             default:
@@ -378,11 +371,11 @@ namespace Jint.Native.Json
                                             code = code * 8 + "01234567".IndexOf(_source.CharCodeAt(_index++));
                                         }
                                     }
-									stringBuilder.Append(((char)code));
+                                    str += ((char)code).ToString();
                                 }
                                 else
                                 {
-									stringBuilder.Append(ch);
+                                    str += ch.ToString();
                                 }
                                 break;
                         }
@@ -402,7 +395,7 @@ namespace Jint.Native.Json
                 }
                 else
                 {
-					stringBuilder.Append(ch);
+                    str += ch.ToString();
                 }
             }
 
@@ -414,7 +407,7 @@ namespace Jint.Native.Json
             return new Token
                 {
                     Type = Tokens.String,
-                    Value = stringBuilder.ToString(),
+                    Value = str,
                     LineNumber = _lineNumber,
                     LineStart = _lineStart,
                     Range = new[] {start, _index}

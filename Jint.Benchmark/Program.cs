@@ -26,7 +26,9 @@ namespace Jint.Benchmark
 
         static void Main()
         {
-            const bool runIronJs = true;
+			new JsonParserBenchmark().Run();
+
+			const bool runIronJs = true;
             const bool runJint = true;
             const bool runJurassic = true;
 
