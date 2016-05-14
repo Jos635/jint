@@ -6,5 +6,6 @@
         public bool Tokens { get; set; }
         public bool Comment { get; set; }
         public bool Tolerant { get; set; }
+		public bool StoreLocation { get; set; } = true;
     }
 }

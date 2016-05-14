@@ -3924,7 +3924,6 @@ namespace Jint.Parser
             {
                 Range = new int[0],
                 Loc = 0,
-
             };
 
             if (options != null)
@@ -3948,6 +3947,11 @@ namespace Jint.Parser
                 {
                     _extra.Errors = new List<ParserException>();
                 }
+
+				if(!options.StoreLocation)
+				{
+					_extra.Loc = null;
+				}
             }
 
             try
